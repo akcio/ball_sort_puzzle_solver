@@ -25,7 +25,11 @@ if __name__ == '__main__':
         min(int(parsed['flask_size']), 4)
     )
     flasks = []
-    for i in range(min(len(parsed['flasks']), initState.flaskCount)):
+    flaskCount = min(len(parsed['flasks']), initState.flaskCount)
+    for i in range(flaskCount):
+        if i >= len(parsed['flasks']):
+            flasks.append(Flask(initState.flaskSize))
+            continue
         userFlask = parsed['flasks'][i]
         flask = Flask(initState.flaskSize)
         if len(userFlask) <= initState.flaskSize:
