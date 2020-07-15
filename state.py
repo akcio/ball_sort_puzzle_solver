@@ -38,4 +38,14 @@ class State:
                     visited.append(otherFlaskNum)
 
         return len(self._flasks) == (sum([x.isEmpty for x in self._flasks]) + len(visited))
+        
+    def compare(self, other):
+        if (not isinstance(other, State)):
+            return None
+        otherFlasks = other.getFlasks()
+        for flaskNum in range(len(self._flasks)):
+            if not (self._flasks[flaskNum] == otherFlasks[flaskNum]):
+                return flaskNum
+        return None
+        
 
