@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Solver</title>
+    <style>
+        .container {
+            background-color: black;
+        }
+        .flask {
+            width: 30px;
+            height: 210px;
+            float: left;
+            margin: 10px;
+            background-color: black;
+            padding-top: 5px;
+            padding-bottom: 5px;
+            padding-left: 5px;
+
+        }
+        .dot {
+            height: 25px;
+            width: 25px;
+            background-color: #bbbbbb;
+            border-radius: 50%;
+            display: inline-block;
+            float: bottom;
+        }
+        #item-pallet {
+            /*width: 100px;*/
+            /*outline: none;*/
+            /*border: none;*/
+            /*background: transparent;*/
+        }
+        input[name=pallet] {
+            display: none;
+        }
+        #item-pallet label {
+            margin: 2px;
+        }
+        .hide {
+            display: none;
+        }
+        .show {
+            display: block;
+        }
+
+    </style>
+</head>
+<body>
+    <div class="" id="modificators">
+        <div class="modificators-main">
+            <label id="currentState"></label><br/>
+            <button id="btn-add-flask">Add one flask</button><br/>
+            <button id="btn-remove-item">Remove item</button><br/>
+            <button id="btn-remove-flask">Remove flask</button><br/>
+            <button id="btn-clear">Clear</button><br/>
+            <button id="btn-solve">Solve</button><br/>
+        </div>
+        <div class="modificators-secondary">
+            <label for="flask-size">Flask size:</label><input type="number" value="4" style="width: 50px" min="2" max="8" id="flask-size"/><button id="btn-set-flask-size">Set flask size</button><br/>
+            <label for="flask-count">Flask count:</label><input type="number" value="4" style="width: 50px" min="3" max="14" id="flask-count"/><button id="btn-set-flask-count">Generate flasks</button><br/>
+            <label for="item-color">Select item color:</label><input type="color" id="item-color"/><button id="btn-add-color">Add color to pallet</button><br/>
+            <label for="item-pallet">Available colors:</label>
+            <div id="item-pallet">
+                <!--label for="disable">Disable editing</label><input type="radio" name="pallet" id="disable" value="none"/-->
+            </div>
+            <!--select id="item-pallet" multiple-->
+            <!--/select-->
+        </div>
+    </div>
+    <div id="player-container" class="hide">
+        <button id="btn-next-step">Next</button>
+        <button id="btn-prev-step">Previous</button>
+        <button id="btn-close-solution">Close</button>
+    </div><br/>
+    <div class="container" id="flask-container">
+    </div><br/>
+
+</body>
+<script>
+    const stateEnum = {
+        "wait":1,
+        "remove_flask":2,
+        "remove_item":3,
+        "add_item_with_color": 4,
+        "show_solution": 5,
+        "request_error": 6
+    };
+    Object.freeze(stateEnum);
+    let currentFlask = undefined;
+    let maxFlaskNum = 0;
+    let currentState = stateEnum.wait;
+    let maxItemInFlask = 4;
+    let solution = [];
+
+    function selectColor() {
+        console.log(1);
+    }
+
+    function addFlask() {
+        let container = document.getElementById("flask-container");
+        let newFlask = document.createElement("div");
+        newFlask.id = "flask-"+ (++maxFlaskNum).toString();
+        newFlask.className = "flask";
+        newFlask.addEventListener("click", flaskClick);
+        newFlask.dataset.id = maxFlaskNum.toString();
+        newFlask.dataset.count = "0";
+        container.append(newFlask);
+        return false;
+    }
+
+    function flaskClick() {
+        event.stopPropagation();
+        switch (currentState) {
+            case stateEnum.remove_flask: {
+                this.remove();
+                break;
+            }
+            case stateEnum.add_item_with_color: {
+                let flaskNum = parseInt(this.dataset.id);
+                let currentColor = document.getElementById("item-color").value;
+                addItem(flaskNum, currentColor);
+                break;
+            }
+            default: return false;
+
+        }
+        return false;
+        // setCurrentState(currentState.wait);
+    }
+
+    function itemClick() {
+        event.stopPropagation();
+        switch (currentState) {
+            case stateEnum.remove_flask: {
+                let flask = document.getElementById("flask-"+this.dataset.flask);
+                if (flask) {
+                    flask.remove();
+                }
+
+                break;
+            }
+            case stateEnum.remove_item: {
+                this.remove();
+                break;
+            }
+            case stateEnum.add_item_with_color: {
+                let flaskNum = parseInt(this.dataset.flask);
+                let currentColor = document.getElementById("item-color").value;
+                addItem(flaskNum, currentColor);
+                break;
+            }
+            default:
+                return false;
+        }
+        // setCurrentState(stateEnum.wait);
+        return false;
+    }
+
+    function addItem(flaskNum, color="#bbbbbb") {
+        let flask = document.getElementById("flask-"+flaskNum);
+        let item = document.createElement("span");
+        let itemsCount = parseInt(flask.dataset.count);
+        if (itemsCount >= maxItemInFlask || itemsCount < 0) {
+            alert("Can't add item");
+            return;
+        }
+        item.className = "dot";
+        item.setAttribute("style", "background-color: " + color + ";");
+        item.dataset.flask = flaskNum.toString();
+        item.dataset.color = color;
+        item.addEventListener("click", itemClick);
+        flask.prepend(item);
+        flask.dataset.count = (++itemsCount).toString();
+    }
+
+    function setCurrentState(newState) {
+        currentState = newState;
+        let currentStateLabel = document.getElementById("currentState");
+        let playerButtons = document.getElementById("player-container");
+        let modificators = document.getElementById("modificators");
+        playerButtons.className = "hide";
+        modificators.className = "";
+        switch (currentState) {
+            case stateEnum.remove_item: {
+                currentStateLabel.innerText = "Mode: remove item";
+                break;
+            }
+            case stateEnum.remove_flask: {
+                currentStateLabel.innerText = "Mode: remove flask";
+                break;
+            }
+            case stateEnum.add_item_with_color: {
+                currentStateLabel.innerText = "Mode: add item with color";
+                break;
+            }
+            case stateEnum.show_solution: {
+                currentStateLabel.innerText = "Mode: show solution";
+                playerButtons.className = "";
+                modificators.className = "hide";
+                break;
+            }
+            case stateEnum.request_error: {
+                currentStateLabel.innerText = "Request error, please try again later";
+                break;
+            }
+            default: {
+                currentStateLabel.innerText = "";
+                break;
+            }
+
+        }
+    }
+
+    function setRemoveFlaskMode() {
+        switch (currentState) {
+            case stateEnum.remove_flask: {
+                this.innerText = "Remove flask";
+                setCurrentState(stateEnum.wait);
+                break;
+            }
+            default: {
+                this.innerText = "Disable flask removing";
+                setCurrentState(stateEnum.remove_flask);
+                break;
+            }
+        }
+    }
+
+    function setRemoveItemMode() {
+        switch (currentState) {
+            case stateEnum.remove_item: {
+                this.innerText = "Remove item";
+                setCurrentState(stateEnum.wait);
+                break;
+            }
+            default: {
+                this.innerText = "Disable item removing";
+                setCurrentState(stateEnum.remove_item);
+                break;
+            }
+        }
+    }
+
+    function initButtonHandlers() {
+        document.getElementById("btn-add-flask").addEventListener("click", addFlask);
+        document.getElementById("btn-remove-item").addEventListener("click", setRemoveItemMode);
+        document.getElementById("btn-remove-flask").addEventListener("click", setRemoveFlaskMode);
+        document.getElementById("btn-add-color").addEventListener("click", addColorToPallet);
+        document.getElementById("btn-clear").addEventListener("click", clear);
+        document.getElementById("btn-set-flask-size").addEventListener("click", setFlaskSize);
+        document.getElementById("btn-set-flask-count").addEventListener("click", generateFlasks);
+        document.getElementById("btn-solve").addEventListener("click", btnSolveClicked);
+
+        document.getElementById("btn-next-step").addEventListener("click", btnNextSolutionClick);
+        document.getElementById("btn-prev-step").addEventListener("click", btnPrevSolutionClick);
+        document.getElementById("btn-close-solution").addEventListener("click", btnCloseSolutionClick);
+    }
+
+    document.addEventListener('DOMContentLoaded', function(){
+        initButtonHandlers();
+    });
+
+    function addColorToPallet() {
+        let palletContainer = document.getElementById("item-pallet");
+        let colorValue = document.getElementById("item-color").value;
+
+        let colorVariations = document.querySelectorAll("input[name=pallet]");
+        for (let i=0; i < colorVariations.length; ++i) {
+            if (colorVariations[i].value === colorValue) {
+                return;
+            }
+        }
+
+        // for (let i=0; i < palletContainer.options.length; ++i) {
+        //     if (palletContainer.options[i].value === colorValue) {
+        //         return;
+        //     }
+        // }
+        // let newOption = document.createElement("option");
+        // newOption.setAttribute("style", "background: " + colorValue + ";");
+        // newOption.innerText = " ";
+        // newOption.value = colorValue;
+        // newOption.addEventListener("click", clickOnColorInPallet);
+        // palletContainer.append(newOption);
+        let label = document.createElement("label");
+        let radio = document.createElement("input");
+        radio.setAttribute("type", "radio");
+        radio.name = "pallet";
+        radio.id = "color-" + colorValue.replace("#", '');
+        radio.value = colorValue;
+        label.setAttribute("for", radio.id);
+        label.innerText = "\u00A0\u00A0\u00A0";
+        label.dataset.color = colorValue;
+        label.setAttribute("style", "background-color:" + colorValue + ";");
+        label.addEventListener("click", clickOnColorInPallet);
+        palletContainer.append(label);
+        palletContainer.append(radio);
+    }
+
+    function clickOnColorInPallet() {
+        if (document.getElementById("item-color").value === this.dataset.color) {
+            setCurrentState(stateEnum.wait);
+        } else {
+            document.getElementById("item-color").value = this.dataset.color;
+            setCurrentState(stateEnum.add_item_with_color);
+        }
+        return false;
+    }
+
+    function clear() {
+        maxFlaskNum = 0;
+        document.getElementById("flask-container").innerHTML = "";
+    }
+
+    function setFlaskSize() {
+        maxItemInFlask = parseInt(document.getElementById("flask-size").value);
+    }
+
+    function generateFlasks() {
+        let flaskCount = parseInt(document.getElementById("flask-count").value);
+        for (let i=0; i < flaskCount; ++i) {
+            addFlask();
+        }
+    }
+
+    function btnSolveClicked() {
+        let container = document.getElementById("flask-container");
+        let query = {'flasks': []};
+        for (let i=0; i < container.childNodes.length; ++i) {
+            let flask = container.childNodes[i];
+            let flaskArr = [];
+            if (!flask || !flask.dataset || !flask.dataset.id || !flask.dataset.count) {
+                continue;
+            }
+            for (let flaskIter = 0; flaskIter < flask.childNodes.length; ++flaskIter) {
+                if (!flask.childNodes[flaskIter] || !flask.childNodes[flaskIter].dataset || !flask.childNodes[flaskIter].dataset.flask || !flask.childNodes[flaskIter].dataset.color) {
+                    continue
+                }
+                let curColor = flask.childNodes[flaskIter].dataset.color;
+                curColor = parseInt(curColor.replace("#", "0x"));
+                flaskArr.push(curColor);
+            }
+            query['flasks'].push(flaskArr);
+        }
+        query['flask_size'] = parseInt(document.getElementById("flask-size").value);
+        query['flasks_count'] = query['flasks'].length;
+
+        let xmlHttp = new XMLHttpRequest();
+        xmlHttp.open("POST", "/", true);
+        xmlHttp.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+        xmlHttp.send(JSON.stringify(query));
+        xmlHttp.onreadystatechange = function() { // Ждём ответа от сервера
+            if (xmlHttp.readyState === 4) { // Ответ пришёл
+                if(xmlHttp.status === 200) { // Сервер вернул код 200 (что хорошо)
+                    // console.log(xmlHttp.responseText);
+                    solution = JSON.parse(xmlHttp.responseText);
+                    document.getElementById("player-container").dataset.currentStep = 0;
+                    drawCurrentSolution();
+                    setCurrentState(stateEnum.show_solution);
+                    // document.getElementById("summa").innerHTML = xmlhttp.responseText; // Выводим ответ сервера
+                } else {
+                    setCurrentState(stateEnum.request_error);
+                }
+            }
+        };
+
+
+    }
+
+    function drawCurrentSolution() {
+        let currentNum = parseInt(document.getElementById("player-container").dataset.currentStep);
+        if (currentNum === undefined || solution.length === 0) {
+            console.warn("Current step is undefined");
+            clear();
+            setCurrentState(stateEnum.wait);
+            return;
+        }
+        if (currentNum >= 0 && currentNum >= solution.length) {
+            // document.getElementById("btn-next-step").className = "hide";
+            // document.getElementById("btn-prev-step").className;
+            currentNum = solution.length - 1;
+        }
+        if (currentNum < 0) {
+            currentNum = 0;
+        }
+        clear();
+        let currentStep = solution[solution.length - currentNum - 1];
+        if (!currentStep.flasks) {
+            console.error("Flasks in solution undefined");
+            setCurrentState(stateEnum.wait);
+        }
+
+        for (let i=0; i < currentStep.flasks.length; ++i) {
+            let flask = currentStep.flasks[i];
+            addFlask();
+            for (let flaskIter = 0; flaskIter < flask.length; ++flaskIter) {
+
+                addItem(i + 1, '#' + flask[flaskIter].toString(16).padStart(6, '0'));
+            }
+        }
+        if (currentStep.movingFlaskNum !== undefined) {
+            console.log(currentStep.movingFlaskNum);
+            document.getElementById("flask-"+(currentStep.movingFlaskNum + 1).toString()).setAttribute("style", "border: dotted 5px red");
+        }
+
+    }
+
+    function btnNextSolutionClick() {
+        let currentStep = parseInt(document.getElementById("player-container").dataset.currentStep);
+        currentStep+=1;
+        if (currentStep >= solution.length) {
+            document.getElementById("btn-next-step").className = "hide";
+            return;
+        } else {
+            document.getElementById("btn-next-step").className = "";
+        }
+        document.getElementById("btn-prev-step").className = "";
+        document.getElementById("player-container").dataset.currentStep = currentStep;
+        drawCurrentSolution();
+    }
+
+    function btnPrevSolutionClick() {
+        let currentStep = parseInt(document.getElementById("player-container").dataset.currentStep);
+        currentStep -=1;
+        if (currentStep < 0) {
+            document.getElementById("btn-prev-step").className = "hide";
+            return;
+        } else {
+            document.getElementById("btn-prev-step").className = "";
+        }
+        document.getElementById("btn-next-step").className = "";
+        document.getElementById("player-container").dataset.currentStep = currentStep;
+        drawCurrentSolution();
+    }
+
+    function btnCloseSolutionClick() {
+        solution = [];
+        clear();
+        document.getElementById("player-container").dataset.currentStep = 0;
+        setCurrentState(stateEnum.wait);
+    }
+
+</script>
+</html>

@@ -49,4 +49,3 @@ class Flask:
         if not isinstance(other, Flask):
             return False
         return len(self._stack) == len(other.getStack()) and all([self._stack[x] == other.getStack()[x] for x in range(len(self._stack))])
-
