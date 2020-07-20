@@ -69,6 +69,7 @@
             <!--/select-->
         </div>
     </div>
+    <div id="wait-answer-container" class="hide">Please wait. Try to find solution.</div>
     <div id="player-container" class="hide">
         <button id="btn-prev-step">Previous</button>
         <button id="btn-next-step">Next</button>
@@ -84,8 +85,9 @@
         "remove_flask":2,
         "remove_item":3,
         "add_item_with_color": 4,
-        "show_solution": 5,
-        "request_error": 6
+        "wait_request_answer": 5,
+        "show_solution": 6,
+        "request_error": 7
     };
     Object.freeze(stateEnum);
     let currentFlask = undefined;
@@ -186,9 +188,11 @@
         currentState = newState;
         let currentStateLabel = document.getElementById("currentState");
         let playerButtons = document.getElementById("player-container");
+        let waitingAnswer = document.getElementById("wait-answer-container");
         let modificators = document.getElementById("modificators");
         playerButtons.className = "hide";
         modificators.className = "";
+        waitingAnswer.className = "hide";
         switch (currentState) {
             case stateEnum.remove_item: {
                 currentStateLabel.innerText = "Mode: remove item";
@@ -196,6 +200,11 @@
             }
             case stateEnum.remove_flask: {
                 currentStateLabel.innerText = "Mode: remove flask";
+                break;
+            }
+            case stateEnum.wait_request_answer: {
+                modificators.className = "hide";
+                waitingAnswer.className = "";
                 break;
             }
             case stateEnum.add_item_with_color: {
