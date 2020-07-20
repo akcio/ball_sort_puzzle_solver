@@ -43,7 +43,7 @@ class Solver:
     def solve(parsed):
         from collections import deque
         initState = State(
-            min(int(parsed['flasks_count']), 12),
+            min(int(parsed['flasks_count']), 14),
             min(int(parsed['flask_size']), 4)
         )
         print(parsed)
