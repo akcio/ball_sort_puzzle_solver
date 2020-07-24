@@ -2,12 +2,13 @@ from flask import Flask
 import copy
 
 class State:
-    def __init__(self, flaskCount: int = 12, flaskSize: int = 4, parentState = None, movingFlaskNum = None):
+    def __init__(self, flaskCount: int = 12, flaskSize: int = 4, parentState = None, toFlask = None, fromFlask = None):
         self.flaskCount = flaskCount
         self.flaskSize = flaskSize
         self._flasks = [Flask(flaskSize) for x in range(flaskCount)]
         self.parentState = parentState
-        self.movingFlaskNum = movingFlaskNum
+        self.toFlask = toFlask
+        self.fromFlask = fromFlask
 
     def getFlasks(self):
         ret = copy.deepcopy(self._flasks)
@@ -52,7 +53,8 @@ class State:
     def toDict(self):
         res = {
             'flasks': [],
-            'movingFlaskNum': self.movingFlaskNum
+            'movingFlaskNum': self.toFlask,
+            'fromFlask': self.fromFlask
         }
         for flaskNum in range(len(self._flasks)):
             res['flasks'].append(self._flasks[flaskNum].getStack())

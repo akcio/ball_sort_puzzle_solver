@@ -91,7 +91,7 @@ class Solver:
                         # print('Empty flask')
                         newFlasks = copy.deepcopy(flasks)
                         newFlasks[otherFlaskNum].addItem(newFlasks[flaskNum].getLastItemAndPop())
-                        newState = State(currentState.flaskCount, currentState.flaskSize, currentState, otherFlaskNum)
+                        newState = State(currentState.flaskCount, currentState.flaskSize, currentState, otherFlaskNum, flaskNum)
                         newState.setFlasks(newFlasks)
                         if newState not in queueState:
                             queueState.append(newState)
